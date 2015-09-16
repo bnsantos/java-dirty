@@ -4,37 +4,40 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
+import com.bnsantos.dirty.exceptions.DiffCheckerException;
+
 public class DiffHelper {
-	public static <T> T diff(T original, T edited){
+	public static <T> T diff(T original, T edited) throws DiffCheckerException{
 		if(!original.getClass().isInstance(edited)){
 			throw new IllegalArgumentException("Not same class");
 		}
-		T diff = null;
 		try {
-			Constructor<? extends Object> constructor = original.getClass().getConstructor(null);
-			diff = (T) constructor.newInstance(null);
-		} catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		Field[] declaredFields = original.getClass().getDeclaredFields();
-		for (int i = 0; i < declaredFields.length; i++) {
-			declaredFields[i].setAccessible(true);
-			try {
+			Constructor<? extends Object> constructor = original.getClass().getConstructor();
+			@SuppressWarnings("unchecked")
+			T diff = (T) constructor.newInstance();
+			boolean isDiff = false;
+			Field[] declaredFields = original.getClass().getDeclaredFields();
+			for (int i = 0; i < declaredFields.length; i++) {
+				declaredFields[i].setAccessible(true);
 				Object fieldOriginal = declaredFields[i].get(original);
 				Object fieldEdited = declaredFields[i].get(edited);
 				if(fieldOriginal!=null){
 					if(!fieldOriginal.equals(fieldEdited)){
+						isDiff = true;
 						declaredFields[i].set(diff, fieldEdited);
 					}	
 				}else if(fieldEdited!=null){
 					declaredFields[i].set(diff, fieldEdited);
+					isDiff = true;
 				}
-			} catch (IllegalArgumentException | IllegalAccessException e) {
-				// TODO Auto-generated catch block throw this to 
-				e.printStackTrace();
 			}
+			if(isDiff){
+				return diff;	
+			}else{
+				return null;
+			}
+		} catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			throw new DiffCheckerException("Error while diff objects", e);
 		}
-		return diff;
 	}
 }
