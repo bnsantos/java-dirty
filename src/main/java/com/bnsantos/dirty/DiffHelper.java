@@ -3,6 +3,7 @@ package com.bnsantos.dirty;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import com.bnsantos.dirty.exceptions.DiffCheckerException;
 
@@ -10,6 +11,9 @@ public class DiffHelper {
 	public static <T> T diff(T original, T edited) throws DiffCheckerException{
 		if(!original.getClass().isInstance(edited)){
 			throw new IllegalArgumentException("Not same class");
+		}
+		if(original instanceof List || edited instanceof List){
+			throw new IllegalArgumentException("This method can't handle lists generics with different objects types");
 		}
 		try {
 			Constructor<? extends Object> constructor = original.getClass().getConstructor();
